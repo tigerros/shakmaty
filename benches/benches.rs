@@ -49,7 +49,7 @@ fn bench_play_unchecked() -> Chess {
     };
 
     let mut pos = black_box(pos);
-    pos.play_unchecked(&m);
+    pos.play_unchecked(m);
     pos
 }
 
@@ -86,7 +86,7 @@ fn bench_play_sans() -> Chess {
             .to_move(&pos)
             .expect("legal move");
 
-        pos.play_unchecked(&m);
+        pos.play_unchecked(m);
     }
     pos
 }

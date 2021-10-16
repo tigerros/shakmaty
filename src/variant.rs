@@ -316,7 +316,7 @@ impl Position for VariantPosition {
     fn promotion_moves(&self) -> MoveList {
         self.borrow().promotion_moves()
     }
-    fn is_irreversible(&self, m: &Move) -> bool {
+    fn is_irreversible(&self, m: Move) -> bool {
         self.borrow().is_irreversible(m)
     }
     fn king_attackers(&self, square: Square, attacker: Color, occupied: Bitboard) -> Bitboard {
@@ -334,7 +334,7 @@ impl Position for VariantPosition {
     fn variant_outcome(&self) -> Option<Outcome> {
         self.borrow().variant_outcome()
     }
-    fn play_unchecked(&mut self, m: &Move) {
+    fn play_unchecked(&mut self, m: Move) {
         self.borrow_mut().play_unchecked(m)
     }
 }
@@ -353,11 +353,7 @@ impl ZobristHash for VariantPosition {
         }
     }
 
-    fn prepare_incremental_zobrist_hash<V: ZobristValue>(
-        &self,
-        previous: V,
-        m: &Move,
-    ) -> Option<V> {
+    fn prepare_incremental_zobrist_hash<V: ZobristValue>(&self, previous: V, m: Move) -> Option<V> {
         match self {
             VariantPosition::Chess(pos) => pos.prepare_incremental_zobrist_hash(previous, m),
             VariantPosition::Atomic(pos) => pos.prepare_incremental_zobrist_hash(previous, m),
@@ -375,7 +371,7 @@ impl ZobristHash for VariantPosition {
     fn finalize_incremental_zobrist_hash<V: ZobristValue>(
         &self,
         intermediate: V,
-        m: &Move,
+        m: Move,
     ) -> Option<V> {
         match self {
             VariantPosition::Chess(pos) => pos.finalize_incremental_zobrist_hash(intermediate, m),
@@ -408,7 +404,7 @@ mod tests {
     fn test_variant_position_play() {
         let pos = VariantPosition::new(Variant::Chess);
         let pos = pos
-            .play(&Move::Normal {
+            .play(Move::Normal {
                 role: Role::Knight,
                 from: Square::G1,
                 to: Square::F3,

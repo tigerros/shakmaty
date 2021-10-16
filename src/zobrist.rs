@@ -120,7 +120,7 @@ pub trait ZobristHash {
     fn prepare_incremental_zobrist_hash<V: ZobristValue>(
         &self,
         _previous: V,
-        _m: &Move,
+        _m: Move,
     ) -> Option<V> {
         None
     }
@@ -131,7 +131,7 @@ pub trait ZobristHash {
     fn finalize_incremental_zobrist_hash<V: ZobristValue>(
         &self,
         _intermediate: V,
-        _m: &Move,
+        _m: Move,
     ) -> Option<V> {
         None
     }
@@ -205,7 +205,7 @@ mod variant {
 /// assert_eq!(pos.zobrist_hash(), 0x463b96181691fc9c); // cached
 ///
 /// // 1. e4
-/// let pos = pos.play(&Move::Normal {
+/// let pos = pos.play(Move::Normal {
 ///     role: Role::Pawn,
 ///     from: Square::E2,
 ///     to: Square::E4,
@@ -321,7 +321,7 @@ impl<P: Position + ZobristHash, V: ZobristValue> Position for Zobrist<P, V> {
     fn promotion_moves(&self) -> MoveList {
         self.pos.promotion_moves()
     }
-    fn is_irreversible(&self, m: &Move) -> bool {
+    fn is_irreversible(&self, m: Move) -> bool {
         self.pos.is_irreversible(m)
     }
     fn king_attackers(&self, square: Square, attacker: Color, occupied: Bitboard) -> Bitboard {
@@ -340,7 +340,7 @@ impl<P: Position + ZobristHash, V: ZobristValue> Position for Zobrist<P, V> {
         self.pos.variant_outcome()
     }
 
-    fn play_unchecked(&mut self, m: &Move) {
+    fn play_unchecked(&mut self, m: Move) {
         self.zobrist.set(
             self.zobrist
                 .get()
@@ -486,7 +486,7 @@ mod tests {
                 .to_move(&pos)
                 .expect("legal uci");
 
-            pos.play_unchecked(&m);
+            pos.play_unchecked(m);
 
             assert_eq!(pos.zobrist_hash(), pos.clone().into_inner().zobrist_hash());
         }

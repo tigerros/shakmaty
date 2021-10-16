@@ -23,7 +23,7 @@ A Rust library for chess move generation
   use shakmaty::{Square, Move, Role};
 
   // 1. e4
-  let pos = pos.play(&Move::Normal {
+  let pos = pos.play(Move::Normal {
       role: Role::Pawn,
       from: Square::E2,
       to: Square::E4,

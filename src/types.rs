@@ -207,7 +207,7 @@ impl Piece {
 }
 
 /// Information about a move.
-#[derive(Clone, Eq, PartialEq, Hash, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 #[repr(align(4))]
 pub enum Move {
     Normal {
@@ -233,8 +233,8 @@ pub enum Move {
 
 impl Move {
     /// Gets the role of the moved piece.
-    pub fn role(&self) -> Role {
-        match *self {
+    pub fn role(self) -> Role {
+        match self {
             Move::Normal { role, .. } | Move::Put { role, .. } => role,
             Move::EnPassant { .. } => Role::Pawn,
             Move::Castle { .. } => Role::King,
@@ -242,8 +242,8 @@ impl Move {
     }
 
     /// Gets the origin square or `None` for drops.
-    pub fn from(&self) -> Option<Square> {
-        match *self {
+    pub fn from(self) -> Option<Square> {
+        match self {
             Move::Normal { from, .. } | Move::EnPassant { from, .. } => Some(from),
             Move::Castle { king, .. } => Some(king),
             Move::Put { .. } => None,
@@ -252,16 +252,16 @@ impl Move {
 
     /// Gets the target square. For castling moves this is the corresponding
     /// rook square.
-    pub fn to(&self) -> Square {
-        match *self {
+    pub fn to(self) -> Square {
+        match self {
             Move::Normal { to, .. } | Move::EnPassant { to, .. } | Move::Put { to, .. } => to,
             Move::Castle { rook, .. } => rook,
         }
     }
 
     /// Gets the role of the captured piece or `None`.
-    pub fn capture(&self) -> Option<Role> {
-        match *self {
+    pub fn capture(self) -> Option<Role> {
+        match self {
             Move::Normal { capture, .. } => capture,
             Move::EnPassant { .. } => Some(Pawn),
             _ => None,
@@ -269,9 +269,9 @@ impl Move {
     }
 
     /// Checks if the move is a capture.
-    pub fn is_capture(&self) -> bool {
+    pub fn is_capture(self) -> bool {
         matches!(
-            *self,
+            self,
             Move::Normal {
                 capture: Some(_),
                 ..
@@ -280,14 +280,14 @@ impl Move {
     }
 
     /// Checks if the move is en passant.
-    pub fn is_en_passant(&self) -> bool {
-        matches!(*self, Move::EnPassant { .. })
+    pub fn is_en_passant(self) -> bool {
+        matches!(self, Move::EnPassant { .. })
     }
 
     /// Checks if the move zeros the half-move clock.
-    pub fn is_zeroing(&self) -> bool {
+    pub fn is_zeroing(self) -> bool {
         matches!(
-            *self,
+            self,
             Move::Normal {
                 role: Role::Pawn,
                 ..
@@ -303,8 +303,8 @@ impl Move {
     }
 
     /// Gets the castling side.
-    pub fn castling_side(&self) -> Option<CastlingSide> {
-        match *self {
+    pub fn castling_side(self) -> Option<CastlingSide> {
+        match self {
             Move::Castle { king, rook } if king < rook => Some(CastlingSide::KingSide),
             Move::Castle { .. } => Some(CastlingSide::QueenSide),
             _ => None,
@@ -312,22 +312,22 @@ impl Move {
     }
 
     /// Checks if the move is a castling move.
-    pub fn is_castle(&self) -> bool {
-        matches!(*self, Move::Castle { .. })
+    pub fn is_castle(self) -> bool {
+        matches!(self, Move::Castle { .. })
     }
 
     /// Gets the promotion role.
-    pub fn promotion(&self) -> Option<Role> {
-        match *self {
+    pub fn promotion(self) -> Option<Role> {
+        match self {
             Move::Normal { promotion, .. } => promotion,
             _ => None,
         }
     }
 
     /// Checks if the move is a promotion.
-    pub fn is_promotion(&self) -> bool {
+    pub fn is_promotion(self) -> bool {
         matches!(
-            *self,
+            self,
             Move::Normal {
                 promotion: Some(_),
                 ..

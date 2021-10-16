@@ -50,7 +50,7 @@
 //! let mut pos = Chess::default();
 //! let m = uci.to_move(&pos)?;
 //!
-//! pos.play_unchecked(&m);
+//! pos.play_unchecked(m);
 //! assert_eq!(pos.board().piece_at(Square::F3), Some(White.knight()));
 //! #
 //! # Ok::<_, Box<dyn Error>>(())
@@ -75,10 +75,10 @@
 //! let uci = m.to_uci(pos.castles().mode());
 //! assert_eq!(uci.to_string(), "b1c3");
 //!
-//! let uci = Uci::from_standard(&m);
+//! let uci = Uci::from_standard(m);
 //! assert_eq!(uci.to_string(), "b1c3");
 //!
-//! let uci = Uci::from_chess960(&m);
+//! let uci = Uci::from_chess960(m);
 //! assert_eq!(uci.to_string(), "b1c3");
 //! ```
 //!
@@ -235,11 +235,11 @@ impl Uci {
     ///     rook: Square::H8,
     /// };
     ///
-    /// let uci = Uci::from_standard(&m);
+    /// let uci = Uci::from_standard(m);
     /// assert_eq!(uci.to_string(), "e8g8");
     /// ```
-    pub fn from_standard(m: &Move) -> Uci {
-        match *m {
+    pub fn from_standard(m: Move) -> Uci {
+        match m {
             Move::Castle { king, rook } => {
                 let side = CastlingSide::from_king_side(king < rook);
                 Uci::Normal {
@@ -267,11 +267,11 @@ impl Uci {
     ///     rook: Square::H8,
     /// };
     ///
-    /// let uci = Uci::from_chess960(&m);
+    /// let uci = Uci::from_chess960(m);
     /// assert_eq!(uci.to_string(), "e8h8");
     /// ```
-    pub fn from_chess960(m: &Move) -> Uci {
-        match *m {
+    pub fn from_chess960(m: Move) -> Uci {
+        match m {
             Move::Normal {
                 from,
                 to,
@@ -297,7 +297,7 @@ impl Uci {
     }
 
     /// See [`Uci::from_standard()`] or [`Uci::from_chess960()`].
-    pub fn from_move(m: &Move, mode: CastlingMode) -> Uci {
+    pub fn from_move(m: Move, mode: CastlingMode) -> Uci {
         match mode {
             CastlingMode::Standard => Uci::from_standard(m),
             CastlingMode::Chess960 => Uci::from_chess960(m),
@@ -365,7 +365,7 @@ impl Uci {
             Uci::Null => return Err(IllegalUciError),
         };
 
-        if pos.is_legal(&candidate) {
+        if pos.is_legal(candidate) {
             Ok(candidate)
         } else {
             Err(IllegalUciError)
@@ -375,7 +375,7 @@ impl Uci {
 
 impl Move {
     /// See [`Uci::from_move()`].
-    pub fn to_uci(&self, mode: CastlingMode) -> Uci {
+    pub fn to_uci(self, mode: CastlingMode) -> Uci {
         Uci::from_move(self, mode)
     }
 }
@@ -396,25 +396,25 @@ mod tests {
             .expect("e4")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&e4);
+        pos.play_unchecked(e4);
         let nc6 = "b8c6"
             .parse::<Uci>()
             .expect("Nc6")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&nc6);
+        pos.play_unchecked(nc6);
         let e5 = "e4e5"
             .parse::<Uci>()
             .expect("e5")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&e5);
+        pos.play_unchecked(e5);
         let d5 = "d7d5"
             .parse::<Uci>()
             .expect("d5")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&d5);
+        pos.play_unchecked(d5);
         let exd5 = "e5d6"
             .parse::<Uci>()
             .expect("exd6")
@@ -434,31 +434,31 @@ mod tests {
             .expect("e4")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&e4);
+        pos.play_unchecked(e4);
         let d5 = "d7d5"
             .parse::<Uci>()
             .expect("d5")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&d5);
+        pos.play_unchecked(d5);
         let exd5 = "e4d5"
             .parse::<Uci>()
             .expect("exd5")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&exd5);
+        pos.play_unchecked(exd5);
         let qxd5 = "d8d5"
             .parse::<Uci>()
             .expect("Qxd5")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&qxd5);
+        pos.play_unchecked(qxd5);
         let p_at_d7 = "P@d7"
             .parse::<Uci>()
             .expect("P@d7+")
             .to_move(&pos)
             .expect("legal");
-        pos.play_unchecked(&p_at_d7);
+        pos.play_unchecked(p_at_d7);
         assert!(pos.is_check());
     }
 
@@ -496,7 +496,7 @@ mod tests {
                 .expect("valid uci")
                 .to_move(&pos)
                 .expect("legal");
-            pos.play_unchecked(&m);
+            pos.play_unchecked(m);
         }
         assert_eq!(
             fen(&pos),
