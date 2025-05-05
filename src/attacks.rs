@@ -20,13 +20,13 @@
 //! assert!(!attacks.contains(Square::H7));
 //! ```
 
-use crate::magics::{BISHOP_MAGICS, ROOK_MAGICS};
+use core::hint::assert_unchecked;
+
 use crate::{
     bitboard::Bitboard,
-    bootstrap::{
-        ATTACKS, BLACK_PAWN_ATTACKS, KING_ATTACKS, KNIGHT_ATTACKS, RAYS, WHITE_PAWN_ATTACKS,
-    },
+    bootstrap::{ATTACKS, KING_ATTACKS, KNIGHT_ATTACKS, PAWN_ATTACKS, RAYS},
     color::Color,
+    magics::{BISHOP_MAGICS, ROOK_MAGICS},
     role::Role,
     square::Square,
     types::Piece,
@@ -35,34 +35,32 @@ use crate::{
 /// Looks up attacks for a pawn of `color` on `sq`.
 #[inline]
 pub const fn pawn_attacks(color: Color, sq: Square) -> Bitboard {
-    Bitboard(match color {
-        Color::White => WHITE_PAWN_ATTACKS[sq.usize()],
-        Color::Black => BLACK_PAWN_ATTACKS[sq.usize()],
-    })
+    Bitboard(PAWN_ATTACKS.get(color)[sq.to_usize()])
 }
 
 /// Looks up attacks for a knight on `sq`.
 #[inline]
 pub const fn knight_attacks(sq: Square) -> Bitboard {
-    Bitboard(KNIGHT_ATTACKS[sq.usize()])
+    Bitboard(KNIGHT_ATTACKS[sq.to_usize()])
 }
 
 /// Looks up attacks for a king on `sq`.
 #[inline]
 pub const fn king_attacks(sq: Square) -> Bitboard {
-    Bitboard(KING_ATTACKS[sq.usize()])
+    Bitboard(KING_ATTACKS[sq.to_usize()])
 }
 
 /// Looks up attacks for a rook on `sq` with `occupied` squares.
 #[inline]
-pub fn rook_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
-    let m = ROOK_MAGICS[sq.usize()];
+pub const fn rook_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
+    let m = ROOK_MAGICS[sq.to_usize()];
 
     // Safety: The attack table was generated with sufficient size
     // for all relevant occupancies (all subsets of m.mask). Omitting bounds
     // checks is worth about 2% in move generation and perft.
     let idx = (m.factor.wrapping_mul(occupied.0 & m.mask) >> (64 - 12)) as usize + m.offset;
-    Bitboard(unsafe { *ATTACKS.get_unchecked(idx) })
+    unsafe { assert_unchecked(idx < ATTACKS.len()) };
+    Bitboard(ATTACKS[idx])
 }
 
 /// Gets the set of potential blocking squares for a rook on `sq`.
@@ -85,19 +83,20 @@ pub fn rook_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
 /// assert_eq!(mask.count(), 11);
 #[inline]
 pub const fn rook_mask(sq: Square) -> Bitboard {
-    Bitboard(ROOK_MAGICS[sq.usize()].mask)
+    Bitboard(ROOK_MAGICS[sq.to_usize()].mask)
 }
 
 /// Looks up attacks for a bishop on `sq` with `occupied` squares.
 #[inline]
-pub fn bishop_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
-    let m = BISHOP_MAGICS[sq.usize()];
+pub const fn bishop_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
+    let m = BISHOP_MAGICS[sq.to_usize()];
 
-    // (panic) Safety: The attack table was generated with sufficient size
+    // Safety: The attack table was generated with sufficient size
     // for all relevant occupancies (all subsets of m.mask). Omitting bounds
     // checks is worth about 2% in move generation and perft.
     let idx = (m.factor.wrapping_mul(occupied.0 & m.mask) >> (64 - 9)) as usize + m.offset;
-    Bitboard(unsafe { *ATTACKS.get_unchecked(idx) })
+    unsafe { assert_unchecked(idx < ATTACKS.len()) };
+    Bitboard(ATTACKS[idx])
 }
 
 /// Gets the set of potential blocking squares for a bishop on `sq`.
@@ -121,17 +120,17 @@ pub fn bishop_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
 /// ```
 #[inline]
 pub const fn bishop_mask(sq: Square) -> Bitboard {
-    Bitboard(BISHOP_MAGICS[sq.usize()].mask)
+    Bitboard(BISHOP_MAGICS[sq.to_usize()].mask)
 }
 
 /// Looks up attacks for a queen on `sq` with `occupied` squares.
 #[inline]
-pub fn queen_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
-    rook_attacks(sq, occupied).bitxor(bishop_attacks(sq, occupied))
+pub const fn queen_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
+    rook_attacks(sq, occupied).toggled_const(bishop_attacks(sq, occupied))
 }
 
 /// Looks up attacks for `piece` on `sq` with `occupied` squares.
-pub fn attacks(sq: Square, piece: Piece, occupied: Bitboard) -> Bitboard {
+pub const fn attacks(sq: Square, piece: Piece, occupied: Bitboard) -> Bitboard {
     match piece.role {
         Role::Pawn => pawn_attacks(piece.color, sq),
         Role::Knight => knight_attacks(sq),
@@ -162,7 +161,7 @@ pub fn attacks(sq: Square, piece: Piece, occupied: Bitboard) -> Bitboard {
 /// ```
 #[inline]
 pub const fn ray(a: Square, b: Square) -> Bitboard {
-    Bitboard(RAYS[a.usize()][b.usize()])
+    Bitboard(RAYS[a.to_usize()][b.to_usize()])
 }
 
 /// The squares between the two squares (bounds not included), or an empty
@@ -185,7 +184,7 @@ pub const fn ray(a: Square, b: Square) -> Bitboard {
 /// ```
 #[inline]
 pub const fn between(a: Square, b: Square) -> Bitboard {
-    Bitboard(ray(a, b).0 & ((!0 << a.u32()) ^ (!0 << b.u32()))).without_first()
+    Bitboard(ray(a, b).0 & ((!0 << a.to_u32()) ^ (!0 << b.to_u32()))).without_first()
 }
 
 /// Tests if all three squares are aligned on a rank, file or diagonal.
