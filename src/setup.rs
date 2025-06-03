@@ -9,8 +9,8 @@ use crate::{
 ///
 /// # Equality
 ///
-/// [`Hash`](std::hash::Hash), [`PartialEq`](std::cmp::PartialEq), and
-/// [`Eq`](std::cmp::Eq) are implemented in terms of structural equality.
+/// [`Hash`](core::hash::Hash), [`PartialEq`], and
+/// [`Eq`] are implemented in terms of structural equality.
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Setup {
     /// Piece positions on the board.
@@ -117,6 +117,7 @@ impl Setup {
         self.ep_square = None;
     }
 
+    #[must_use]
     pub const fn into_swapped_turn(mut self) -> Setup {
         self.swap_turn();
         self
@@ -140,6 +141,7 @@ impl Setup {
         }
     }
 
+    #[must_use]
     pub fn into_mirrored(mut self) -> Setup {
         self.mirror();
         self
@@ -295,13 +297,13 @@ impl Castles {
         self.mask.is_empty()
     }
 
-    pub fn has(&self, color: Color, side: CastlingSide) -> bool {
+    pub const fn has(&self, color: Color, side: CastlingSide) -> bool {
         self.rook(color, side).is_some()
     }
 
     pub const fn has_color(&self, color: Color) -> bool {
         self.mask
-            .intersect(Bitboard::from_rank(color.backrank()))
+            .intersect_const(Bitboard::from_rank(color.backrank()))
             .any()
     }
 
@@ -418,11 +420,11 @@ impl EnPassant {
         self.0
     }
 
-    pub fn pawn_pushed_from(self) -> Square {
+    pub const fn pawn_pushed_from(self) -> Square {
         self.0.xor(Square::A4)
     }
 
-    pub fn pawn_pushed_to(self) -> Square {
+    pub const fn pawn_pushed_to(self) -> Square {
         self.0.xor(Square::A2)
     }
 }

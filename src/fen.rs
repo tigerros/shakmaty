@@ -50,7 +50,7 @@
 //! ```
 
 use core::{
-    char,
+    char, error,
     fmt::{self, Display},
     num::NonZeroU32,
     str::FromStr,
@@ -165,8 +165,7 @@ impl Display for ParseFenError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ParseFenError {}
+impl error::Error for ParseFenError {}
 
 fn parse_board_fen(board_fen: &[u8]) -> Result<(Board, Bitboard), ParseFenError> {
     let mut promoted = Bitboard(0);
@@ -198,7 +197,7 @@ fn parse_board_fen(board_fen: &[u8]) -> Result<(Board, Bitboard), ParseFenError>
                         promoted.add(sq);
                         iter.next();
                     }
-                    board.set_piece_at(sq, piece);
+                    board.set_new_piece_at(sq, piece);
                 }
                 _ => return Err(ParseFenError::InvalidBoard),
             }
@@ -331,11 +330,6 @@ impl BoardFen<'_> {
     #[cfg(feature = "alloc")]
     pub fn append_ascii_to(&self, buf: &mut alloc::vec::Vec<u8>) {
         let _ = self.append_to(buf);
-    }
-
-    #[cfg(feature = "std")]
-    pub fn write_ascii_to<W: std::io::Write>(&self, w: W) -> std::io::Result<()> {
-        self.append_to(&mut crate::util::WriteAscii(w))
     }
 }
 
@@ -547,11 +541,6 @@ impl Fen {
     pub fn append_ascii_to(&self, buf: &mut alloc::vec::Vec<u8>) {
         let _ = self.append_to(buf);
     }
-
-    #[cfg(feature = "std")]
-    pub fn write_ascii_to<W: std::io::Write>(&self, w: W) -> std::io::Result<()> {
-        self.append_to(&mut crate::util::WriteAscii(w))
-    }
 }
 
 impl From<Setup> for Fen {
@@ -669,11 +658,6 @@ impl Epd {
     #[cfg(feature = "alloc")]
     pub fn append_ascii_to(&self, buf: &mut alloc::vec::Vec<u8>) {
         let _ = self.append_to(buf);
-    }
-
-    #[cfg(feature = "std")]
-    pub fn write_ascii_to<W: std::io::Write>(&self, w: W) -> std::io::Result<()> {
-        self.append_to(&mut crate::util::WriteAscii(w))
     }
 }
 
@@ -832,7 +816,7 @@ mod tests {
             .parse::<Fen>()
             .expect("valid fen")
             .into_setup();
-        assert_eq!(setup.pockets, Some(Default::default()));
+        assert_eq!(setup.pockets, Some(ByColor::default()));
     }
 
     #[test]

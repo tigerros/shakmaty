@@ -52,7 +52,7 @@
 //! # Ok::<_, CommonError>(())
 //! ```
 
-use core::{fmt, str::FromStr};
+use core::{error, fmt, str::FromStr};
 
 use crate::{
     util::AppendAscii, CastlingSide, File, Move, MoveList, Outcome, Position, Rank, Role, Square,
@@ -68,8 +68,7 @@ impl fmt::Display for ParseSanError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ParseSanError {}
+impl error::Error for ParseSanError {}
 
 /// `IllegalSan` or `AmbiguousSan`.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -89,8 +88,7 @@ impl fmt::Display for SanError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for SanError {}
+impl error::Error for SanError {}
 
 /// A move in Standard Algebraic Notation.
 #[derive(Copy, Debug, PartialEq, Eq, Clone, Hash)]
@@ -522,11 +520,6 @@ impl San {
     pub fn append_ascii_to(self, buf: &mut alloc::vec::Vec<u8>) {
         let _ = self.append_to(buf);
     }
-
-    #[cfg(feature = "std")]
-    pub fn write_ascii_to<W: std::io::Write>(self, w: W) -> std::io::Result<()> {
-        self.append_to(&mut crate::util::WriteAscii(w))
-    }
 }
 
 impl FromStr for San {
@@ -701,11 +694,6 @@ impl SanPlus {
     pub fn append_ascii_to(self, buf: &mut alloc::vec::Vec<u8>) {
         let _ = self.append_to(buf);
     }
-
-    #[cfg(feature = "std")]
-    pub fn write_ascii_to<W: std::io::Write>(self, w: W) -> std::io::Result<()> {
-        self.append_to(&mut crate::util::WriteAscii(w))
-    }
 }
 
 impl FromStr for SanPlus {
@@ -786,7 +774,7 @@ mod tests {
             "d1=N", "@e4#", "K@b3", "Ba5", "Bba5", "Ra1a8", "--", "O-O", "O-O-O+",
         ] {
             let result = san.parse::<SanPlus>().expect("valid san").to_string();
-            assert_eq!(*san, result, "read {} write {}", san, result);
+            assert_eq!(*san, result, "read {san} write {result}");
         }
     }
 

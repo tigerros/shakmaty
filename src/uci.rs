@@ -64,7 +64,7 @@
 //!
 //! [`Move`]: super::Move
 
-use core::{fmt, str::FromStr};
+use core::{error, fmt, str::FromStr};
 
 use crate::{util::AppendAscii, CastlingMode, CastlingSide, Move, Position, Rank, Role, Square};
 
@@ -72,24 +72,17 @@ use crate::{util::AppendAscii, CastlingMode, CastlingSide, Move, Position, Rank,
 #[derive(Clone, Debug)]
 pub struct ParseUciMoveError;
 
-#[deprecated = "Use `ParseUciMoveError` instead"]
-pub type ParseUciError = ParseUciMoveError;
-
 impl fmt::Display for ParseUciMoveError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str("invalid uci")
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ParseUciMoveError {}
+impl error::Error for ParseUciMoveError {}
 
 /// Error when UCI move is illegal.
 #[derive(Clone, Debug)]
 pub struct IllegalUciMoveError;
-
-#[deprecated = "Use `ParseUciMoveError` instead"]
-pub type IllegalUciError = IllegalUciMoveError;
 
 impl fmt::Display for IllegalUciMoveError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -97,11 +90,7 @@ impl fmt::Display for IllegalUciMoveError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for IllegalUciMoveError {}
-
-#[deprecated = "Use `UciMove` instead"]
-pub type Uci = UciMove;
+impl error::Error for IllegalUciMoveError {}
 
 /// A move as represented in the UCI protocol.
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
@@ -448,11 +437,6 @@ impl UciMove {
     #[cfg(feature = "alloc")]
     pub fn append_ascii_to(self, buf: &mut alloc::vec::Vec<u8>) {
         let _ = self.append_to(buf);
-    }
-
-    #[cfg(feature = "std")]
-    pub fn write_ascii_to<W: std::io::Write>(self, w: W) -> std::io::Result<()> {
-        self.append_to(&mut crate::util::WriteAscii(w))
     }
 }
 

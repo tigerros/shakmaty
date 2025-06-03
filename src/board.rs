@@ -73,21 +73,36 @@ impl Board {
     ///
     /// Panics if the bitboards are inconsistent.
     #[track_caller]
-    pub fn from_bitboards(by_role: ByRole<Bitboard>, by_color: ByColor<Bitboard>) -> Board {
-        let mut occupied = Bitboard::EMPTY;
-        by_role.for_each(|role| {
-            assert!(occupied.is_disjoint(role), "by_role not disjoint");
-            occupied |= role;
-        });
+    pub const fn from_bitboards(by_role: ByRole<Bitboard>, by_color: ByColor<Bitboard>) -> Board {
+        let occupied = by_role
+            .pawn
+            .with_const(by_role.knight)
+            .with_const(by_role.bishop)
+            .with_const(by_role.rook)
+            .with_const(by_role.queen)
+            .with_const(by_role.king);
+
         assert!(
-            by_color.black.is_disjoint(by_color.white),
+            occupied.count()
+                == by_role.pawn.count()
+                    + by_role.knight.count()
+                    + by_role.bishop.count()
+                    + by_role.rook.count()
+                    + by_role.queen.count()
+                    + by_role.king.count(),
+            "by_role not disjoint"
+        );
+
+        assert!(
+            by_color.black.is_disjoint_const(by_color.white),
             "by_color not disjoint"
         );
-        assert_eq!(
-            occupied,
-            by_color.black | by_color.white,
+
+        assert!(
+            occupied.0 == by_color.black.0 | by_color.white.0,
             "by_role does not match by_color"
         );
+
         Board {
             by_role,
             by_color,
@@ -219,7 +234,7 @@ impl Board {
     pub const fn king_of(&self, color: Color) -> Option<Square> {
         self.by_role
             .king
-            .intersect(self.by_color(color))
+            .intersect_const(self.by_color(color))
             .single_square()
     }
 
@@ -231,7 +246,7 @@ impl Board {
     #[inline]
     pub fn role_at(&self, sq: Square) -> Option<Role> {
         if self.occupied.contains(sq) {
-            self.by_role.find(|r| r.contains(sq))
+            Some(self.by_role.find_or_king(|r| r.contains(sq)))
         } else {
             None // catch early
         }
@@ -239,10 +254,8 @@ impl Board {
 
     #[inline]
     pub fn piece_at(&self, sq: Square) -> Option<Piece> {
-        self.role_at(sq).map(|role| Piece {
-            color: Color::from_white(self.by_color.white.contains(sq)),
-            role,
-        })
+        self.color_at(sq)
+            .map(|color| self.by_role.find_or_king(|r| r.contains(sq)).of(color))
     }
 
     #[must_use = "use Board::discard_piece_at() if return value is not needed"]
@@ -273,6 +286,13 @@ impl Board {
     }
 
     #[inline]
+    pub(crate) fn set_new_piece_at(&mut self, sq: Square, Piece { color, role }: Piece) {
+        assert!(self.occupied.insert(sq));
+        self.by_role.get_mut(role).toggle(sq);
+        self.by_color.get_mut(color).toggle(sq);
+    }
+
+    #[inline]
     pub const fn by_color(&self, color: Color) -> Bitboard {
         *self.by_color.get(color)
     }
@@ -285,7 +305,7 @@ impl Board {
     #[inline]
     pub const fn by_piece(&self, piece: Piece) -> Bitboard {
         self.by_color(piece.color)
-            .intersect(self.by_role(piece.role))
+            .intersect_const(self.by_role(piece.role))
     }
 
     pub fn attacks_from(&self, sq: Square) -> Bitboard {
@@ -362,11 +382,12 @@ impl Board {
     }
 
     /// Swap piece colors, making black pieces white and vice versa.
-    pub fn swap_colors(&mut self) {
+    pub const fn swap_colors(&mut self) {
         self.by_color.swap();
     }
 
-    pub fn into_swapped_colors(mut self) -> Board {
+    #[must_use]
+    pub const fn into_swapped_colors(mut self) -> Board {
         self.swap_colors();
         self
     }
@@ -378,13 +399,14 @@ impl Board {
         self.swap_colors();
     }
 
+    #[must_use]
     pub fn into_mirrored(mut self) -> Board {
         self.mirror();
         self
     }
 
     #[inline]
-    pub fn is_empty(&self) -> bool {
+    pub const fn is_empty(&self) -> bool {
         self.occupied.is_empty()
     }
 
@@ -413,10 +435,7 @@ impl Board {
     }
 
     pub fn iter(&self) -> Iter<'_> {
-        Iter {
-            squares: self.occupied.into_iter(),
-            board: self,
-        }
+        self.into_iter()
     }
 }
 
@@ -515,7 +534,10 @@ impl<'a> IntoIterator for &'a Board {
     type Item = (Square, Piece);
 
     fn into_iter(self) -> Iter<'a> {
-        self.iter()
+        Iter {
+            squares: self.occupied.into_iter(),
+            board: self,
+        }
     }
 }
 

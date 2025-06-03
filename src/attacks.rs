@@ -63,29 +63,6 @@ pub const fn rook_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
     Bitboard(ATTACKS[idx])
 }
 
-/// Gets the set of potential blocking squares for a rook on `sq`.
-///
-/// # Example
-///
-/// ```
-/// use shakmaty::{attacks, Square};
-///
-/// let mask = attacks::rook_mask(Square::E8);
-/// // 0 1 1 1 0 1 1 0
-/// // . . . . 1 . . .
-/// // . . . . 1 . . .
-/// // . . . . 1 . . .
-/// // . . . . 1 . . .
-/// // . . . . 1 . . .
-/// // . . . . 1 . . .
-/// // . . . . 0 . . .
-///
-/// assert_eq!(mask.count(), 11);
-#[inline]
-pub const fn rook_mask(sq: Square) -> Bitboard {
-    Bitboard(ROOK_MAGICS[sq.to_usize()].mask)
-}
-
 /// Looks up attacks for a bishop on `sq` with `occupied` squares.
 #[inline]
 pub const fn bishop_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
@@ -97,30 +74,6 @@ pub const fn bishop_attacks(sq: Square, occupied: Bitboard) -> Bitboard {
     let idx = (m.factor.wrapping_mul(occupied.0 & m.mask) >> (64 - 9)) as usize + m.offset;
     unsafe { assert_unchecked(idx < ATTACKS.len()) };
     Bitboard(ATTACKS[idx])
-}
-
-/// Gets the set of potential blocking squares for a bishop on `sq`.
-///
-/// # Example
-///
-/// ```
-/// use shakmaty::{attacks, Square};
-///
-/// let mask = attacks::bishop_mask(Square::D5);
-/// // 0 . . . . . 0 .
-/// // . 1 . . . 1 . .
-/// // . . 1 . 1 . . .
-/// // . . . 0 . . . .
-/// // . . 1 . 1 . . .
-/// // . 1 . . . 1 . .
-/// // 0 . . . . . 1 .
-/// // . . . . . . . 0
-///
-/// assert_eq!(mask.count(), 9);
-/// ```
-#[inline]
-pub const fn bishop_mask(sq: Square) -> Bitboard {
-    Bitboard(BISHOP_MAGICS[sq.to_usize()].mask)
 }
 
 /// Looks up attacks for a queen on `sq` with `occupied` squares.
@@ -208,8 +161,8 @@ mod tests {
     #[test]
     fn test_rook_attacks() {
         assert_eq!(
-            rook_attacks(Square::D6, Bitboard(0x3f7f28802826f5b9)),
-            Bitboard(0x8370808000000)
+            rook_attacks(Square::D6, Bitboard(0x3f7f_2880_2826_f5b9)),
+            Bitboard(0x0008_3708_0800_0000)
         );
     }
 }

@@ -1,5 +1,5 @@
 use core::{
-    fmt,
+    error, fmt,
     hash::{Hash, Hasher},
     num::NonZeroU32,
     str::FromStr,
@@ -81,8 +81,7 @@ impl fmt::Display for ParseOutcomeError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ParseOutcomeError {}
+impl error::Error for ParseOutcomeError {}
 
 impl FromStr for Outcome {
     type Err = ParseOutcomeError;
@@ -101,22 +100,13 @@ pub struct PlayError<P> {
     pub position: P,
 }
 
-impl<P> PlayError<P> {
-    /// Returns the unchanged position.
-    #[deprecated = "Use public field `PlayError::position`"]
-    pub fn into_inner(self) -> P {
-        self.position
-    }
-}
-
 impl<P: fmt::Debug> fmt::Display for PlayError<P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "illegal move {:?} in {:?}", self.m, self.position)
     }
 }
 
-#[cfg(feature = "std")]
-impl<P: fmt::Debug> std::error::Error for PlayError<P> {}
+impl<P: fmt::Debug> error::Error for PlayError<P> {}
 
 bitflags! {
     /// Reasons for a [`Setup`] not being a legal [`Position`].
@@ -186,9 +176,6 @@ bitflags! {
 
         /// A variant specific rule is violated.
         const VARIANT = 1 << 9;
-
-        #[deprecated = "Use `PositionErrorKinds::TOO_MUCH_MATERIAL` instead"]
-        const IMPOSSIBLE_MATERIAL = PositionErrorKinds::TOO_MUCH_MATERIAL.bits();
     }
 }
 
@@ -233,11 +220,6 @@ impl<P> PositionError<P> {
         self.ignore(PositionErrorKinds::TOO_MUCH_MATERIAL)
     }
 
-    #[deprecated = "Use `PositionErrorKinds::ignore_too_much_material()`"]
-    pub fn ignore_impossible_material(self) -> Result<P, Self> {
-        self.ignore(PositionErrorKinds::TOO_MUCH_MATERIAL)
-    }
-
     /// Get the position despite [`PositionErrorKinds::IMPOSSIBLE_CHECK`]
     /// (not be be confused with [`PositionErrorKinds::OPPOSITE_CHECK`]).
     ///
@@ -256,7 +238,7 @@ impl<P> fmt::Debug for PositionError<P> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("PositionError")
             .field("errors", &self.errors)
-            .finish()
+            .finish_non_exhaustive()
     }
 }
 
@@ -297,8 +279,7 @@ impl<P> fmt::Display for PositionError<P> {
     }
 }
 
-#[cfg(feature = "std")]
-impl<P> std::error::Error for PositionError<P> {}
+impl<P> error::Error for PositionError<P> {}
 
 /// Validate and set up a playable [`Position`]. All provided chess variants
 /// support this.
@@ -335,8 +316,8 @@ pub trait FromSetup: Sized {
 ///
 /// # Equality
 ///
-/// All provided variants implement [`Hash`](std::hash::Hash),
-/// [`PartialEq`](std::cmp::PartialEq), and [`Eq`](std::cmp::Eq) according
+/// All provided variants implement [`Hash`],
+/// [`PartialEq`], and [`Eq`] according
 /// to FIDE rules for repeated positions. That is, considering
 ///
 /// * piece positions
@@ -664,8 +645,8 @@ pub trait Position {
 ///
 /// # Equality
 ///
-/// [`Hash`](std::hash::Hash), [`PartialEq`](std::cmp::PartialEq),
-/// and [`Eq`](std::cmp::Eq) are implemented according to FIDE rules for
+/// [`Hash`], [`PartialEq`],
+/// and [`Eq`] are implemented according to FIDE rules for
 /// repeated positions. See [`Position`](trait.Position.html#equality).
 #[derive(Clone, Debug)]
 pub struct Chess {
@@ -2879,11 +2860,11 @@ fn do_move(
             let side = CastlingSide::from_queen_side(rook < king);
             board.discard_piece_at(king);
             board.discard_piece_at(rook);
-            board.set_piece_at(
+            board.set_new_piece_at(
                 Square::from_coords(side.rook_to_file(), rook.rank()),
                 color.rook(),
             );
-            board.set_piece_at(
+            board.set_new_piece_at(
                 Square::from_coords(side.king_to_file(), king.rank()),
                 color.king(),
             );
@@ -2892,10 +2873,10 @@ fn do_move(
         Move::EnPassant { from, to } => {
             board.discard_piece_at(Square::from_coords(to.file(), from.rank())); // captured pawn
             board.discard_piece_at(from);
-            board.set_piece_at(to, color.pawn());
+            board.set_new_piece_at(to, color.pawn());
         }
         Move::Put { role, to } => {
-            board.set_piece_at(to, Piece { color, role });
+            board.set_new_piece_at(to, Piece { color, role });
         }
     }
 
@@ -2977,22 +2958,30 @@ fn validate<P: Position>(pos: &P, ep_square: Option<EnPassant>) -> PositionError
 
 const fn is_standard_material(board: &Board, color: Color) -> bool {
     let our = board.by_color(color);
-    let promoted_pieces = board.queens().intersect(our).count().saturating_sub(1)
-        + board.rooks().intersect(our).count().saturating_sub(2)
-        + board.knights().intersect(our).count().saturating_sub(2)
+    let promoted_pieces = board
+        .queens()
+        .intersect_const(our)
+        .count()
+        .saturating_sub(1)
+        + board.rooks().intersect_const(our).count().saturating_sub(2)
+        + board
+            .knights()
+            .intersect_const(our)
+            .count()
+            .saturating_sub(2)
         + board
             .bishops()
-            .intersect(our)
-            .intersect(Bitboard::LIGHT_SQUARES)
+            .intersect_const(our)
+            .intersect_const(Bitboard::LIGHT_SQUARES)
             .count()
             .saturating_sub(1)
         + board
             .bishops()
-            .intersect(our)
-            .intersect(Bitboard::DARK_SQUARES)
+            .intersect_const(our)
+            .intersect_const(Bitboard::DARK_SQUARES)
             .count()
             .saturating_sub(1);
-    board.pawns().intersect(our).count() + promoted_pieces <= 8
+    board.pawns().intersect_const(our).count() + promoted_pieces <= 8
 }
 
 fn gen_non_king<P: Position>(pos: &P, target: Bitboard, moves: &mut MoveList) {

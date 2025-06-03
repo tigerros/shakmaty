@@ -1,4 +1,5 @@
 use core::{
+    error,
     fmt::{self, Write as _},
     mem,
     num::TryFromIntError,
@@ -336,8 +337,7 @@ impl fmt::Display for ParseSquareError {
     }
 }
 
-#[cfg(feature = "std")]
-impl std::error::Error for ParseSquareError {}
+impl error::Error for ParseSquareError {}
 
 /// A square of the chessboard.
 #[rustfmt::skip]
@@ -690,11 +690,6 @@ impl Square {
     #[cfg(feature = "alloc")]
     pub fn append_ascii_to(&self, buf: &mut alloc::vec::Vec<u8>) {
         let _ = self.append_to(buf);
-    }
-
-    #[cfg(feature = "std")]
-    pub fn write_ascii_to<W: std::io::Write>(&self, w: W) -> std::io::Result<()> {
-        self.append_to(&mut crate::util::WriteAscii(w))
     }
 }
 
