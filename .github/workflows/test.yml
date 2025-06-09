@@ -19,7 +19,7 @@ jobs:
           - "--features alloc"
           - "--features alloc,variant,serde"
           - "--features std"
-          - "--features std,variant,serde"
+          - "--features std,variant,arbitrary,serde"
         include:
           - toolchain: "nightly"
             flags: "-Z minimal-versions --all-features"

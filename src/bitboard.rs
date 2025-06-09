@@ -2,7 +2,7 @@
 
 use core::{fmt, fmt::Write, iter::FusedIterator, ops};
 
-use crate::square::{File, Rank, Square};
+use crate::{File, Rank, Square};
 
 /// A set of [squares](super::Square) represented by a 64 bit
 /// integer mask.
@@ -22,6 +22,7 @@ use crate::square::{File, Rank, Square};
 /// // . 1 . . 1 . . .
 /// // . 1 . . . 1 . .
 /// ```
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Default)]
 pub struct Bitboard(pub u64);
 
@@ -112,7 +113,7 @@ impl Bitboard {
     /// Tests if `self` contains the given square.
     #[inline]
     pub const fn contains(self, sq: Square) -> bool {
-        self.intersect_const(Bitboard::from_square(sq)).any()
+        self.intersects_const(Bitboard::from_square(sq))
     }
 
     /// Adds `squares`.
@@ -214,6 +215,17 @@ impl Bitboard {
         Bitboard(self.0 & squares.0)
     }
 
+    /// Tests if `self` and `squares` intersect.
+    #[inline]
+    pub fn intersects<T: Into<Bitboard>>(self, squares: T) -> bool {
+        self.intersects_const(squares.into())
+    }
+
+    #[inline]
+    pub const fn intersects_const(self, squares: Bitboard) -> bool {
+        self.intersect_const(squares).any()
+    }
+
     /// Returns the union of `self` and `squares`. Equivalent to bitwise `|`.
     #[doc(alias = "union")]
     #[must_use]
@@ -269,7 +281,7 @@ impl Bitboard {
     /// Same as the `is_disjoint` method, but usable in `const` contexts.
     #[inline]
     pub const fn is_disjoint_const(self, other: Bitboard) -> bool {
-        self.intersect_const(other).is_empty()
+        !self.intersects_const(other)
     }
 
     /// Tests if `self` is a subset of `other`.

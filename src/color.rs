@@ -2,15 +2,11 @@
 
 use core::{array, convert::identity, error, fmt, mem, num, ops, str::FromStr};
 
-use crate::{
-    role::{ByRole, Role},
-    square::Rank,
-    types::Piece,
-    util::out_of_range_error,
-};
+use crate::{util::out_of_range_error, ByRole, Piece, Rank, Role};
 
 /// `White` or `Black`.
 #[allow(missing_docs)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Copy, Clone, Eq, PartialEq, Debug, Hash)]
 pub enum Color {
     Black = 0,
@@ -211,6 +207,7 @@ macro_rules! try_color_from_int_impl {
 try_color_from_int_impl! { u8 i8 u16 i16 u32 i32 u64 i64 u128 i128 usize isize }
 
 /// Container with values for each [`Color`].
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Copy, Clone, Default, Eq, PartialEq, Debug, Hash)]
 pub struct ByColor<T> {
     pub black: T,
@@ -327,23 +324,6 @@ impl<T> ByColor<T> {
     }
 }
 
-impl<T> ByColor<ByRole<T>> {
-    pub const fn piece(&self, piece: Piece) -> &T {
-        self.get(piece.color).get(piece.role)
-    }
-
-    pub const fn piece_mut(&mut self, piece: Piece) -> &mut T {
-        self.get_mut(piece.color).get_mut(piece.role)
-    }
-}
-
-#[cfg(feature = "variant")]
-impl ByColor<ByRole<u8>> {
-    pub(crate) fn count(self) -> usize {
-        self.iter().map(|&role| role.count()).sum()
-    }
-}
-
 impl<T: PartialOrd> ByColor<T> {
     pub fn normalize(&mut self) {
         if self.white < self.black {
@@ -416,5 +396,69 @@ impl<T> ops::IndexMut<Color> for ByColor<T> {
     #[inline]
     fn index_mut(&mut self, index: Color) -> &mut T {
         self.get_mut(index)
+    }
+}
+
+impl<T> ByColor<ByRole<T>> {
+    #[inline]
+    pub const fn piece(&self, piece: Piece) -> &T {
+        self.get(piece.color).get(piece.role)
+    }
+
+    #[inline]
+    pub const fn piece_mut(&mut self, piece: Piece) -> &mut T {
+        self.get_mut(piece.color).get_mut(piece.role)
+    }
+
+    pub fn transpose_piece(self) -> ByRole<ByColor<T>> {
+        ByRole {
+            pawn: ByColor {
+                white: self.white.pawn,
+                black: self.black.pawn,
+            },
+            knight: ByColor {
+                white: self.white.knight,
+                black: self.black.knight,
+            },
+            bishop: ByColor {
+                white: self.white.bishop,
+                black: self.black.bishop,
+            },
+            rook: ByColor {
+                white: self.white.rook,
+                black: self.black.rook,
+            },
+            queen: ByColor {
+                white: self.white.queen,
+                black: self.black.queen,
+            },
+            king: ByColor {
+                white: self.white.king,
+                black: self.black.king,
+            },
+        }
+    }
+}
+
+#[cfg(feature = "variant")]
+impl ByColor<ByRole<u8>> {
+    pub(crate) fn count(self) -> usize {
+        self.iter().map(|&role| role.count()).sum()
+    }
+}
+
+impl<T> ops::Index<Piece> for ByColor<ByRole<T>> {
+    type Output = T;
+
+    #[inline]
+    fn index(&self, index: Piece) -> &T {
+        self.piece(index)
+    }
+}
+
+impl<T> ops::IndexMut<Piece> for ByColor<ByRole<T>> {
+    #[inline]
+    fn index_mut(&mut self, index: Piece) -> &mut T {
+        self.piece_mut(index)
     }
 }

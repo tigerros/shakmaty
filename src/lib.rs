@@ -53,6 +53,8 @@
 //! * `std`: Implies `alloc`. Enabled by default.
 //!   For `no_std` environments, this must be disabled with `default-features = false`.
 //! * `variant`: Enables support for all Lichess variants.
+//! * `arbitrary`: Implements [`arbitrary::Arbitrary`](https://docs.rs/arbitrary/1/arbitrary/trait.Arbitrary.html)
+//!   for vocabulary types.
 //! * `serde`: Implements [`serde::Serialize`](https://docs.rs/serde/1/serde/trait.Serialize.html)
 //!   and [`serde::Deserialize`](https://docs.rs/serde/1/serde/trait.Deserialize.html) for
 //!   types with unique natural representations.
@@ -65,6 +67,7 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_debug_implementations)]
 #![cfg_attr(docs_rs, feature(doc_auto_cfg))]
+#![allow(clippy::too_many_arguments)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
@@ -74,11 +77,9 @@ extern crate std;
 
 #[macro_use]
 mod util;
-mod bootstrap;
 mod castling_side;
 mod color;
-mod magics;
-mod movelist;
+mod m;
 mod perft;
 mod position;
 mod role;
@@ -90,6 +91,7 @@ pub mod attacks;
 pub mod bitboard;
 pub mod board;
 pub mod fen;
+pub mod packed;
 pub mod san;
 pub mod uci;
 pub mod zobrist;
@@ -101,7 +103,7 @@ pub use bitboard::Bitboard;
 pub use board::Board;
 pub use castling_side::{ByCastlingSide, CastlingSide};
 pub use color::{ByColor, Color, ParseColorError};
-pub use movelist::MoveList;
+pub use m::{Move, MoveList};
 pub use perft::perft;
 pub use position::{
     Chess, FromSetup, Outcome, ParseOutcomeError, PlayError, Position, PositionError,
@@ -110,7 +112,7 @@ pub use position::{
 pub use role::{ByRole, Role};
 pub use setup::{Castles, Setup};
 pub use square::{File, ParseSquareError, Rank, Square};
-pub use types::{CastlingMode, EnPassantMode, Move, Piece, RemainingChecks};
+pub use types::{CastlingMode, EnPassantMode, Piece, RemainingChecks};
 
 #[cfg(feature = "nohash-hasher")]
 impl nohash_hasher::IsEnabled for File {}

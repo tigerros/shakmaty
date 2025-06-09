@@ -11,6 +11,7 @@ use crate::{
 ///
 /// [`Hash`](core::hash::Hash), [`PartialEq`], and
 /// [`Eq`] are implemented in terms of structural equality.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Debug, Clone, Eq, PartialEq, Hash)]
 pub struct Setup {
     /// Piece positions on the board.
@@ -94,10 +95,7 @@ impl Setup {
             ep_square: None,
             remaining_checks: None,
             halfmoves: 0,
-            fullmoves: match NonZeroU32::new(1) {
-                Some(num) => num,
-                _ => unreachable!(),
-            },
+            fullmoves: NonZeroU32::MIN,
         }
     }
 

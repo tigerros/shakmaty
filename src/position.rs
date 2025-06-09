@@ -9,14 +9,15 @@ use bitflags::bitflags;
 
 use crate::{
     attacks,
-    bitboard::{Bitboard, Direction},
-    setup::{Castles, EnPassant, Setup},
-    Board, ByColor, ByRole, CastlingMode, CastlingSide, Color,
+    bitboard::Direction,
+    setup::EnPassant,
+    Bitboard, Board, ByColor, ByRole, Castles, CastlingMode, CastlingSide, Color,
     Color::{Black, White},
-    EnPassantMode, Move, MoveList, Piece, Rank, RemainingChecks, Role, Square,
+    EnPassantMode, Move, MoveList, Piece, Rank, RemainingChecks, Role, Setup, Square,
 };
 
 /// Outcome of a game.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub enum Outcome {
     Decisive { winner: Color },
@@ -716,10 +717,7 @@ impl Chess {
             castles: Castles::new(),
             ep_square: None,
             halfmoves: 0,
-            fullmoves: match NonZeroU32::new(1) {
-                Some(num) => num,
-                _ => unreachable!(),
-            },
+            fullmoves: NonZeroU32::MIN,
         }
     }
 }
@@ -776,6 +774,14 @@ impl FromSetup for Chess {
     fn from_setup(setup: Setup, mode: CastlingMode) -> Result<Chess, PositionError<Chess>> {
         let (pos, _, _, errors) = Chess::from_setup_unchecked(setup, mode);
         PositionError { pos, errors }.strict()
+    }
+}
+
+#[cfg(feature = "arbitrary")]
+impl arbitrary::Arbitrary<'_> for Chess {
+    fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<Chess> {
+        Chess::from_setup(Setup::arbitrary(u)?, CastlingMode::Chess960)
+            .map_err(|_| arbitrary::Error::IncorrectFormat)
     }
 }
 
@@ -1046,10 +1052,7 @@ pub(crate) mod variant {
                 castles: Castles::new(),
                 ep_square: None,
                 halfmoves: 0,
-                fullmoves: match NonZeroU32::new(1) {
-                    Some(num) => num,
-                    _ => unreachable!(),
-                },
+                fullmoves: NonZeroU32::MIN,
             }
         }
     }
@@ -1123,6 +1126,14 @@ pub(crate) mod variant {
             }
 
             PositionError { pos, errors }.strict()
+        }
+    }
+
+    #[cfg(feature = "arbitrary")]
+    impl arbitrary::Arbitrary<'_> for Atomic {
+        fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<Atomic> {
+            Atomic::from_setup(Setup::arbitrary(u)?, CastlingMode::Chess960)
+                .map_err(|_| arbitrary::Error::IncorrectFormat)
         }
     }
 
@@ -1341,10 +1352,7 @@ pub(crate) mod variant {
                 castles: Castles::empty(CastlingMode::Standard),
                 ep_square: None,
                 halfmoves: 0,
-                fullmoves: match NonZeroU32::new(1) {
-                    Some(num) => num,
-                    _ => unreachable!(),
-                },
+                fullmoves: NonZeroU32::MIN,
             }
         }
     }
@@ -1409,6 +1417,14 @@ pub(crate) mod variant {
                 - PositionErrorKinds::IMPOSSIBLE_CHECK;
 
             PositionError { pos, errors }.strict()
+        }
+    }
+
+    #[cfg(feature = "arbitrary")]
+    impl arbitrary::Arbitrary<'_> for Antichess {
+        fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<Antichess> {
+            Antichess::from_setup(Setup::arbitrary(u)?, CastlingMode::Chess960)
+                .map_err(|_| arbitrary::Error::IncorrectFormat)
         }
     }
 
@@ -1575,6 +1591,14 @@ pub(crate) mod variant {
         }
     }
 
+    #[cfg(feature = "arbitrary")]
+    impl arbitrary::Arbitrary<'_> for KingOfTheHill {
+        fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<KingOfTheHill> {
+            KingOfTheHill::from_setup(Setup::arbitrary(u)?, CastlingMode::Chess960)
+                .map_err(|_| arbitrary::Error::IncorrectFormat)
+        }
+    }
+
     impl Position for KingOfTheHill {
         fn board(&self) -> &Board {
             self.chess.board()
@@ -1706,6 +1730,14 @@ pub(crate) mod variant {
                 },
             }
             .strict()
+        }
+    }
+
+    #[cfg(feature = "arbitrary")]
+    impl arbitrary::Arbitrary<'_> for ThreeCheck {
+        fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<ThreeCheck> {
+            ThreeCheck::from_setup(Setup::arbitrary(u)?, CastlingMode::Chess960)
+                .map_err(|_| arbitrary::Error::IncorrectFormat)
         }
     }
 
@@ -1928,6 +1960,14 @@ pub(crate) mod variant {
         }
     }
 
+    #[cfg(feature = "arbitrary")]
+    impl arbitrary::Arbitrary<'_> for Crazyhouse {
+        fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<Crazyhouse> {
+            Crazyhouse::from_setup(Setup::arbitrary(u)?, CastlingMode::Chess960)
+                .map_err(|_| arbitrary::Error::IncorrectFormat)
+        }
+    }
+
     impl Position for Crazyhouse {
         fn board(&self) -> &Board {
             self.chess.board()
@@ -2101,10 +2141,7 @@ pub(crate) mod variant {
                 turn: White,
                 castles: Castles::empty(CastlingMode::Standard),
                 halfmoves: 0,
-                fullmoves: match NonZeroU32::new(1) {
-                    Some(num) => num,
-                    _ => unreachable!(),
-                },
+                fullmoves: NonZeroU32::MIN,
             }
         }
     }
@@ -2185,6 +2222,14 @@ pub(crate) mod variant {
             errors |= validate(&pos, None);
 
             PositionError { pos, errors }.strict()
+        }
+    }
+
+    #[cfg(feature = "arbitrary")]
+    impl arbitrary::Arbitrary<'_> for RacingKings {
+        fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<RacingKings> {
+            RacingKings::from_setup(Setup::arbitrary(u)?, CastlingMode::Chess960)
+                .map_err(|_| arbitrary::Error::IncorrectFormat)
         }
     }
 
@@ -2338,7 +2383,7 @@ pub(crate) mod variant {
                 castles,
                 ep_square: None,
                 halfmoves: 0,
-                fullmoves: NonZeroU32::new(1).unwrap(),
+                fullmoves: NonZeroU32::MIN,
             }
         }
     }
@@ -2422,6 +2467,14 @@ pub(crate) mod variant {
             }
 
             PositionError { pos, errors }.strict()
+        }
+    }
+
+    #[cfg(feature = "arbitrary")]
+    impl arbitrary::Arbitrary<'_> for Horde {
+        fn arbitrary(u: &mut arbitrary::Unstructured) -> arbitrary::Result<Horde> {
+            Horde::from_setup(Setup::arbitrary(u)?, CastlingMode::Chess960)
+                .map_err(|_| arbitrary::Error::IncorrectFormat)
         }
     }
 
@@ -3699,7 +3752,7 @@ mod tests {
             .expect("valid position");
         let swapped = pos.swap_turn().expect("swap turn");
         assert_eq!(
-            Fen(swapped.to_setup(EnPassantMode::Always)).to_string(),
+            Fen::from_position(&swapped, EnPassantMode::Always).to_string(),
             "rnbqkbnr/ppp1p1pp/8/3pPp2/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 3"
         );
     }
