@@ -455,7 +455,8 @@ mod tests {
 
     #[cfg(feature = "alloc")]
     #[test]
-    fn from_to_str() {
+    #[cfg_attr(miri, ignore)]
+    fn test_from_to_str() {
         use alloc::string::ToString as _;
 
         // Normal (no promotion)

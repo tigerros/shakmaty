@@ -63,7 +63,7 @@
 //!   for sensible types.
 
 #![no_std]
-#![doc(html_root_url = "https://docs.rs/shakmaty/0.27.3")]
+#![doc(html_root_url = "https://docs.rs/shakmaty/0.28.0")]
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_debug_implementations)]
 #![cfg_attr(docs_rs, feature(doc_auto_cfg))]
@@ -106,8 +106,8 @@ pub use color::{ByColor, Color, ParseColorError};
 pub use m::{Move, MoveList};
 pub use perft::perft;
 pub use position::{
-    Chess, FromSetup, Outcome, ParseOutcomeError, PlayError, Position, PositionError,
-    PositionErrorKinds,
+    Chess, FromSetup, OpenOutcome, Outcome, ParseOpenOutcomeError, ParseOutcomeError, PlayError,
+    Position, PositionError, PositionErrorKinds,
 };
 pub use role::{ByRole, Role};
 pub use setup::{Castles, Setup};
