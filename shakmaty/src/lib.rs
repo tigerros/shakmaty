@@ -61,9 +61,13 @@
 //! * `nohash-hasher`: Implements
 //!   [`nohash_hasher::IsEnabled`](https://docs.rs/nohash-hasher/0.2/nohash_hasher/trait.IsEnabled.html)
 //!   for sensible types.
+//!
+//! # Related crates
+//!
+//! * [shakmaty-syzygy](https://docs.rs/shakmaty-syzygy)
+//! * [pgn-reader](https://docs.rs/pgn-reader)
 
 #![no_std]
-#![doc(html_root_url = "https://docs.rs/shakmaty/0.28.0")]
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_debug_implementations)]
 #![cfg_attr(docs_rs, feature(doc_auto_cfg))]
